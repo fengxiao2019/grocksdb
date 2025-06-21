@@ -15,10 +15,11 @@ convention of how/when to free c-mem, thus break the rule of [tecbot/gorocksdb](
 
 ## Install
 
-### Prerequisite 
+### Prerequisites
 
+#### Linux/macOS:
 - librocksdb
-- libsnappy
+- libsnappy  
 - libz
 - liblz4
 - libzstd
@@ -26,10 +27,29 @@ convention of how/when to free c-mem, thus break the rule of [tecbot/gorocksdb](
 
 Please follow this guide: https://github.com/facebook/rocksdb/blob/master/INSTALL.md to build above libs.
 
+#### Windows:
+- **Visual Studio 2019 or later** with C++ support
+- **CMake 3.10 or later**
+- **Git for Windows** (or equivalent for tar command)
+- **PowerShell 5.0 or later**
+
+**Automated Installation:**
+```cmd
+# Using batch file (recommended)
+build_windows.bat C:\rocksdb
+
+# Or using PowerShell directly
+powershell -ExecutionPolicy Bypass -File build_windows.ps1 -InstallPrefix "C:\rocksdb"
+```
+
+**Manual Installation:**
+You can also manually install RocksDB following: https://github.com/facebook/rocksdb/blob/master/INSTALL.md#windows
+
 ### Build 
 
 After installing both `rocksdb` and `grocksdb`, you can build your app using the following commands:
 
+#### Linux/macOS:
 ```bash
 CGO_CFLAGS="-I/path/to/rocksdb/include" \
 CGO_LDFLAGS="-L/path/to/rocksdb -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lzstd" \
@@ -38,7 +58,7 @@ CGO_LDFLAGS="-L/path/to/rocksdb -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lzstd
 
 Or just:
 ```bash
-go build // if prerequisites are in linker paths
+go build # if prerequisites are in linker paths
 ```
 
 If your rocksdb was linked with bz2:
@@ -47,18 +67,59 @@ CGO_LDFLAGS="-L/path/to/rocksdb -lrocksdb -lstdc++ -lm -lz -lsnappy -llz4 -lzstd
   go build
 ```
 
+#### Windows:
+After running the build script, set environment variables and build:
+
+**Command Prompt:**
+```cmd
+set CGO_CFLAGS=-IC:\rocksdb\include
+set CGO_LDFLAGS=-LC:\rocksdb\lib -lrocksdb -lstdc++ -lzstd -llz4 -lz -lsnappy
+go build
+```
+
+**PowerShell:**
+```powershell
+$env:CGO_CFLAGS="-IC:\rocksdb\include"
+$env:CGO_LDFLAGS="-LC:\rocksdb\lib -lrocksdb -lstdc++ -lzstd -llz4 -lz -lsnappy"
+go build
+```
+
+**Or use Make (if you have Make for Windows):**
+```cmd
+# Set GOOS and build
+set GOOS=windows
+make libs
+go build
+```
+
 #### Customize the build flags
+
+**Linux/macOS:**
 Currently, the default build flags without specifying `CGO_LDFLAGS` or the corresponding environment variables are `-lrocksdb -pthread -lstdc++ -ldl -lm -lzstd -llz4 -lz -lsnappy`
+
+**Windows:**
+The default build flags are `-lrocksdb -lstdc++ -lzstd -llz4 -lz -lsnappy` (Unix-specific libraries like `-pthread` and `-ldl` are automatically excluded)
 
 If you want to customize the build flags:
 
-1. Use `-tags grocksdb_clean_link` to create a cleaner set of flags and build it based on the cleaner flag. The base build flags after using the tag are `-lrocksdb -pthread -lstdc++ -ldl`.
+1. Use `-tags grocksdb_clean_link` to create a cleaner set of flags and build it based on the cleaner flag. The base build flags after using the tag are `-lrocksdb -pthread -lstdc++ -ldl` (Linux/macOS) or `-lrocksdb -lstdc++` (Windows).
 ```bash
+# Linux/macOS
 CGO_LDFLAGS="-L/path/to/rocksdb -lzstd" go build -tags grocksdb_clean_link
+
+# Windows
+set CGO_LDFLAGS=-LC:\rocksdb\lib -lzstd
+go build -tags grocksdb_clean_link
 ```
+
 2. Use `-tags grocksdb_no_link` to ignore the build flags provided by the library and build it fully based on the custom flags.
 ```bash
-CGO_LDFLAGS="-L/path/to/rocksdb -lrocksdb -lstdc++ -lzstd -llz4" go build -tags grocksdb_clean_link
+# Linux/macOS
+CGO_LDFLAGS="-L/path/to/rocksdb -lrocksdb -lstdc++ -lzstd -llz4" go build -tags grocksdb_no_link
+
+# Windows  
+set CGO_LDFLAGS=-LC:\rocksdb\lib -lrocksdb -lstdc++ -lzstd -llz4
+go build -tags grocksdb_no_link
 ```
 
 ## Usage

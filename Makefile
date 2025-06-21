@@ -12,12 +12,26 @@ default: prepare libs
 
 .PHONY: prepare
 prepare:
+ifeq ($(GOOS),windows)
+	powershell -Command "if (Test-Path '$(DEST)') { Remove-Item '$(DEST)' -Recurse -Force }"
+	powershell -Command "New-Item -ItemType Directory -Path '$(DEST_LIB)' -Force | Out-Null"
+	powershell -Command "New-Item -ItemType Directory -Path '$(DEST_INCLUDE)' -Force | Out-Null"
+else
 	rm -rf $(DEST)
 	mkdir -p $(DEST_LIB) $(DEST_INCLUDE)
+endif
 
 .PHONY: libs
 libs:
+ifeq ($(GOOS),windows)
+	powershell -ExecutionPolicy Bypass -File build_windows.ps1 -InstallPrefix "$(DEST)"
+else
 	./build.sh $(DEST)
+endif
+
+.PHONY: libs-windows
+libs-windows:
+	powershell -ExecutionPolicy Bypass -File build_windows.ps1 -InstallPrefix "$(DEST)"
 
 .PHONY: test
 test:
